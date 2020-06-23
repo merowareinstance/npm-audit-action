@@ -1,0 +1,25 @@
+name: 'Audit Actions'
+author: Edward Romero
+description: 'Automatically create npm audit results annotations when run in Github Actions'
+branding: 'check-square'
+color: 'orange'
+inputs:
+  dirPath:
+    description: 'Directory path of the project to audit'
+    required: false
+    default: './'
+  environment:
+    description: 'Environment of the project'
+    required: false
+    default: 'ci'
+  sort:
+    description: 'Sort output audits ascending from least to most serverity or descending from most to least severity'
+    required: false
+    default: 'dsc'
+  debug:
+    description: 'Whether to output logging of action running'
+    required: false
+    default: false
+runs:
+  using: 'node12'
+  main: 'index.js'
