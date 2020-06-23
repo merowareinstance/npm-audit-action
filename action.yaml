@@ -1,4 +1,4 @@
-name: 'Audit Actions'
+name: 'Npm Audit Action'
 author: Edward Romero
 description: 'Automatically create npm audit results annotations when run in Github Actions'
 branding: 'check-square'
