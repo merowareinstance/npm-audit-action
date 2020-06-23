@@ -1,6 +1,6 @@
 {
   "name": "npm-audit-action",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "Automatically create npm audit results annotations when run in Github Actions",
   "main": "index.js",
   "scripts": {
