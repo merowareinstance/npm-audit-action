@@ -4,15 +4,13 @@ const { actionsModule } = require("./modules");
 async function start({
   dirPath,
   sort,
-  environment,
   debug
 }) {
   prettyNpmAudit({
     dirPath,
     sort,
-    environment,
     debug,
-    json: true,
+    jsonPretty: true,
   });
 
   const tables = await prettyNpmAudit.audit();
