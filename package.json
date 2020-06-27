@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/legolamel/npm-audit-action.git"
+    "url": "git+https://github.com/meroware/npm-audit-action.git"
   },
   "author": "Edward Romero",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/legolamel/npm-audit-action/issues"
+    "url": "https://github.com/meroware/npm-audit-action/issues"
   },
-  "homepage": "https://github.com/legolamel/npm-audit-action#readme",
+  "homepage": "https://github.com/meroware/npm-audit-action#readme",
   "devDependencies": {
     "eslint": "^7.2.0",
     "eslint-config-airbnb": "^18.2.0",

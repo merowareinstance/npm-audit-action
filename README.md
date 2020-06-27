@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/checkout@v2
         with:
-          repository: legolamel/npm-audit-action
+          repository: meroware/npm-audit-action
           ref: v1
           path: .github/actions/npm-audit-action
       - name: Use the action
