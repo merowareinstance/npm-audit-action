@@ -35,6 +35,6 @@
   },
   "dependencies": {
     "@actions/core": "^1.2.4",
-    "pretty-npm-audit": "^1.0.0"
+    "pretty-npm-audit": "^1.0.1"
   }
 }
