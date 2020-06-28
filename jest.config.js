@@ -1,5 +1,5 @@
 const isUnitTest = process.env.TEST_ENV === "unit";
-module.exports = {
+const config = {
   automock: isUnitTest,
   bail: true,
   clearMocks: true,
@@ -8,15 +8,20 @@ module.exports = {
   coverageDirectory: "coverage",
   coveragePathIgnorePatterns: ["./node_modules/", "./jest/", "jest.config.js"],
   coverageReporters: ["json", "text", "lcov", "clover"],
-  coverageThreshold: {
+  resetMocks: true,
+  restoreMocks: true,
+  testEnvironment: "node",
+};
+
+if (isUnitTest) {
+  config.coverageThreshold = {
     global: {
       branches: 90,
       functions: 90,
       lines: 90,
       statements: -10,
     },
-  },
-  resetMocks: true,
-  restoreMocks: true,
-  testEnvironment: "node",
-};
+  };
+}
+
+module.exports = config;
