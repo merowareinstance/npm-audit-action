@@ -20,4 +20,4 @@ jobs:
         node-version: '12.x'
     - run: npm ci
     - run: npm run lint
-    - run: npm run tests
+    - run: npm run test
