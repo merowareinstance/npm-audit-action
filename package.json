@@ -4,7 +4,8 @@
   "description": "Automatically create npm audit results annotations when run in Github Actions",
   "main": "index.js",
   "scripts": {
-    "build": "ncc build index.js; git add dist/*;",
+    "build": "ncc build index.js",
+    "build-commit": "npm run build; git add dist/*;",
     "dev": "NODE_ENV=development nodemon index.js",
     "lint": "eslint --ext .js ./",
     "lint:fix": "eslint --fix --ext .js ./",
@@ -45,7 +46,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "npm run build"
+      "pre-commit": "npm run build-commit"
     }
   }
 }
