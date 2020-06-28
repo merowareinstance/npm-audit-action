@@ -1,0 +1,22 @@
+name: Npm Audit Action CI
+on:
+  push:
+    branches-ignore:
+      - master
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+      - '.github/CODEOWNERS'
+      - '.github/PULL_REQUEST_TEMPLATE.md'
+      - 'img/**'
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js
+      uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
+    - run: npm ci
+    - run: npm run lint
