@@ -384,51 +384,7 @@ module.exports = function equal(a, b) {
 /* 26 */,
 /* 27 */,
 /* 28 */,
-/* 29 */
-/***/ (function(module) {
-
-function parseCommands(commands) {
-  const data = {};
-  commands.forEach((rawCommand) => {
-    const parts = rawCommand.split("=");
-    if (parts.length === 2) {
-      const [command, value] = parts;
-      let parsedValue = null;
-      switch (command) {
-        case "debug":
-          if (value === "true") {
-            parsedValue = true;
-          } else if (value === "false") {
-            parsedValue = false;
-          }
-          break;
-        case "dirPath":
-          parsedValue = value;
-          break;
-        case "environment":
-          parsedValue = value;
-          break;
-        case "sort":
-          if (value === "asc" || value === "dsc") {
-            parsedValue = value;
-          }
-          break;
-        default:
-      }
-      if (parsedValue) {
-        data[command] = parsedValue;
-      }
-    }
-  });
-  return data;
-}
-
-module.exports = {
-  parseCommands,
-};
-
-
-/***/ }),
+/* 29 */,
 /* 30 */,
 /* 31 */,
 /* 32 */
@@ -642,26 +598,26 @@ const fs = __webpack_require__(747);
  * Parses commands into supported ones and ignores the rest
  * @param {Object} commands
  * @param {String} commands.dirPath
- * @param {String} commands.environment
  * @param {String} commands.sort
  * @param {Boolean} commands.debug
+ * @param {Boolean} commands.json
+ * @param {Boolean} commands.jsonPretty
  */
 function parseCommands(commands) {
   if (commands && typeof commands === "object") {
-    const { dirPath, environment, sort, debug, json } = commands;
+    const { dirPath, sort, debug, json, jsonPretty } = commands;
     // TODO: Go through and do param validation e.g make sure dirpath is an actual path
   
     if (dirPath && !fs.existsSync(dirPath)) {
-      console.log('netered')
       throw new Error(`File path could not be found ${dirPath}`);
     }
 
     return {
       dirPath,
-      environment,
       sort,
       debug,
       json,
+      jsonPretty,
     };
   }
   return {};
@@ -6016,24 +5972,26 @@ module.exports = new ActionAnnotations();
 const actionsAnnotations = __webpack_require__(269);
 
 async function generateAnnotations(data) {
-  const keys = Object.keys(data);
-  for (let i = 0; i < keys.length; i += 1) {
-    const severity = keys[i];
-    const tables = data[severity];
-    for (let j = 0; j < tables.length; j += 1) {
-      const message = tables[j];
-      switch (severity) {
-        case "info":
-          break;
-        case "low":
-        case "moderate":
-          actionsAnnotations.warn({ message });
-          break;
-        case "high":
-        case "critical":
-          actionsAnnotations.error({ message });
-          break;
-        default:
+  if (data) {
+    const keys = Object.keys(data);
+    for (let i = 0; i < keys.length; i += 1) {
+      const severity = keys[i];
+      const tables = data[severity];
+      for (let j = 0; j < tables.length; j += 1) {
+        const message = tables[j];
+        switch (severity) {
+          case "info":
+            break;
+          case "low":
+          case "moderate":
+            actionsAnnotations.warn({ message });
+            break;
+          case "high":
+          case "critical":
+            actionsAnnotations.error({ message });
+            break;
+          default:
+        }
       }
     }
   }
@@ -9641,13 +9599,11 @@ module.exports = (flag, argv = process.argv) => {
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
 const actionsModule = __webpack_require__(278);
-const commandsModule = __webpack_require__(29);
 const actionsAnnotations = __webpack_require__(269);
 
 module.exports = {
   actionsModule,
   actionsAnnotations,
-  commandsModule,
 };
 
 
@@ -9703,26 +9659,10 @@ module.exports = values;
 /* 461 */
 /***/ (function(__unusedmodule, __unusedexports, __webpack_require__) {
 
-const core = __webpack_require__(525);
 const init = __webpack_require__(838);
 
-try {
-const dirPath = core.getInput('dirPath');
-const sort = core.getInput('sort');
-const environment = core.getInput('environment');
-const debug = core.getInput('debug');
+init.start();
 
-init.start({
-    dirPath,
-    sort,
-    environment,
-    debug,
-}).catch(e => {
-    core.setFailed(e.message);
-})
-} catch(e) {
-    core.setFailed(e.message);
-}
 
 /***/ }),
 /* 462 */,
@@ -12719,7 +12659,7 @@ function buildTable({
   return data;
 }
 
-function parse({ payload, sort, json }) {
+function parse({ payload, sort, json, jsonPretty }) {
   const { metadata, advisories } = payload;
 
   const { vulnerabilities } = metadata;
@@ -12750,8 +12690,18 @@ function parse({ payload, sort, json }) {
 
   const advisoryNumbers = Object.keys(advisories);
 
+  // TODO: Cleanup how we create this tables so that we don't have to have
+  // two identical root level objects
   // Defaults to dsc - highest to lowest priority
-  const advisoryTables = {
+  const advisoryTablesJson = {
+    critical: [],
+    high: [],
+    moderate: [],
+    low: [],
+    info: [],
+  };
+
+  const advisoryTablesJsonPretty = {
     critical: [],
     high: [],
     moderate: [],
@@ -12783,7 +12733,7 @@ function parse({ payload, sort, json }) {
       severity,
     });
 
-    const message = buildTable({
+    const cleanJson = {
       title,
       moduleName,
       vulnerableVersions,
@@ -12792,20 +12742,22 @@ function parse({ payload, sort, json }) {
       recommendation,
       url,
       severity,
-    });
+    };
 
-    advisoryTables[severity].push(message);
+    advisoryTablesJson[severity].push(cleanJson);
+
+    advisoryTablesJsonPretty[severity].push(buildTable(cleanJson));
   });
 
   // Defaults to dsc - highest to lowest priority
-  let sortedTables = advisoryTables;
+  let sortedTables = json === true ? advisoryTablesJson : advisoryTablesJsonPretty;
 
   if (sort && sort === "asc") {
     sortedTables = arraysModule.reverseObjectByKeys(sortedTables);
   }
 
   // Return all tables squashed into a string of tables
-  if (!json) {
+  if (!jsonPretty && !json) {
     return arraysModule.objectToString(sortedTables);
   }
 
@@ -16690,25 +16642,28 @@ if (typeof SharedArrayBuffer !== 'undefined' && typeof Atomics !== 'undefined') 
 /* 838 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
+const core = __webpack_require__(525);
 const prettyNpmAudit = __webpack_require__(910);
 const { actionsModule } = __webpack_require__(451);
 
-async function start({
-  dirPath,
-  sort,
-  environment,
-  debug
-}) {
-  prettyNpmAudit({
-    dirPath,
-    sort,
-    environment,
-    debug,
-    json: true,
-  });
+async function start() {
+  try {
+    const dirPath = core.getInput("dirPath");
+    const sort = core.getInput("sort");
+    const debug = core.getInput("debug");
 
-  const tables = await prettyNpmAudit.audit();
-  actionsModule.generateAnnotations(tables);
+    prettyNpmAudit({
+      dirPath,
+      sort,
+      debug,
+      jsonPretty: true,
+    });
+
+    const tables = await prettyNpmAudit.audit();
+    actionsModule.generateAnnotations(tables);
+  } catch (e) {
+    core.setFailed(e.message);
+  }
 }
 
 module.exports = {
@@ -17792,9 +17747,9 @@ const { parserModule, commandsModule, logger } = __webpack_require__(373);
 
 const useConfig = {
   dirPath: "./",
-  environment: "ci",
   debug: false,
   json: false,
+  jsonPretty: false,
 };
 
 function config() {
@@ -17833,6 +17788,7 @@ function audit() {
           payload: completePayload,
           sort: useConfig.sort,
           json: useConfig.json,
+          jsonPretty: useConfig.jsonPretty,
         });
         resolve(data);
       } catch (e) {
@@ -17852,25 +17808,28 @@ function prettyAudit(...args) {
     if (commands) {
       const {
         dirPath,
-        environment,
         sort,
         debug,
         json,
+        jsonPretty,
       } = commandsModule.parseCommands(commands);
 
+      if(json !== undefined && jsonPretty !== undefined) {
+        throw new Error('Please provide one option between json and jsonPretty');
+      }
+
       useConfig.dirPath = dirPath === undefined ? useConfig.dirPath : dirPath;
-      useConfig.environment =
-        environment === undefined ? useConfig.environment : environment;
       useConfig.sort = sort === undefined ? useConfig.sort : sort;
       useConfig.debug = debug === undefined ? useConfig.debug : debug;
       useConfig.json = json === undefined ? useConfig.json : json;
+      useConfig.jsonPretty = jsonPretty === undefined ? useConfig.jsonPretty : jsonPretty;
     }
   }
 
   // Reset config if changed
   logger.setConfig({
-    enabled: useConfig.debug,
-    prettyPrint: useConfig.debug,
+    enabled: !!useConfig.debug,
+    prettyPrint: !!useConfig.debug,
   });
 }
 

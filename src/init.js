@@ -3,19 +3,23 @@ const prettyNpmAudit = require("pretty-npm-audit");
 const { actionsModule } = require("./modules");
 
 async function start() {
-  const dirPath = core.getInput("dirPath");
-  const sort = core.getInput("sort");
-  const debug = core.getInput("debug");
+  try {
+    const dirPath = core.getInput("dirPath");
+    const sort = core.getInput("sort");
+    const debug = core.getInput("debug");
 
-  prettyNpmAudit({
-    dirPath,
-    sort,
-    debug,
-    jsonPretty: true,
-  });
+    prettyNpmAudit({
+      dirPath,
+      sort,
+      debug,
+      jsonPretty: true,
+    });
 
-  const tables = await prettyNpmAudit.audit();
-  actionsModule.generateAnnotations(tables);
+    const tables = await prettyNpmAudit.audit();
+    actionsModule.generateAnnotations(tables);
+  } catch (e) {
+    core.setFailed(e.message);
+  }
 }
 
 module.exports = {

@@ -1,40 +1,45 @@
-let isUnitTest = false;
-let testMatch;
+const isUnitTest = false;
+
+const defaultConfig = {
+  bail: true,
+  testEnvironment: "node",
+};
+
+let overrideConfig = {};
 switch (process.env.TEST_ENV) {
   case "unit":
-    isUnitTest = true;
-    testMatch = ["**/__tests__/unit/**"];
+    overrideConfig = {
+      automock: true,
+      clearMocks: true,
+      resetMocks: true,
+      restoreMocks: true,
+      testMatch: ["**/__tests__/unit/**"],
+      coverageThreshold: {
+        global: {
+          branches: 90,
+          functions: 90,
+          lines: 90,
+          statements: -10,
+        },
+      },
+      collectCoverage: true,
+      collectCoverageFrom: ["*.js", "src/**/*.js"],
+      coverageDirectory: "coverage",
+      coveragePathIgnorePatterns: [
+        "./node_modules/",
+        "./jest/",
+        "jest.config.js",
+        "__tests__",
+      ],
+      coverageReporters: ["json", "text", "lcov", "clover"],
+    };
     break;
   case "integration":
-    testMatch = ["**/__tests__/integration/**"];
+    overrideConfig = {
+      testMatch: ["**/__tests__/integration/**"],
+    };
     break;
   default:
 }
 
-const config = {
-  automock: isUnitTest,
-  bail: true,
-  clearMocks: true,
-  collectCoverage: isUnitTest,
-  collectCoverageFrom: ["*.js", "src/**/*.js"],
-  testMatch,
-  coverageDirectory: "coverage",
-  coveragePathIgnorePatterns: ["./node_modules/", "./jest/", "jest.config.js"],
-  coverageReporters: ["json", "text", "lcov", "clover"],
-  resetMocks: true,
-  restoreMocks: true,
-  testEnvironment: "node",
-};
-
-if (isUnitTest) {
-  config.coverageThreshold = {
-    global: {
-      branches: 90,
-      functions: 90,
-      lines: 90,
-      statements: -10,
-    },
-  };
-}
-
-module.exports = config;
+module.exports = { ...defaultConfig, ...overrideConfig };

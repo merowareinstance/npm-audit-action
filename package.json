@@ -4,6 +4,7 @@
   "description": "Automatically create npm audit results annotations when run in Github Actions",
   "main": "index.js",
   "scripts": {
+    "build": "ncc build index.js; git add dist/*;",
     "dev": "NODE_ENV=development nodemon index.js",
     "lint": "eslint --ext .js ./",
     "lint:fix": "eslint --fix --ext .js ./",
@@ -33,12 +34,18 @@
     "eslint-plugin-prettier": "3.1.4",
     "eslint-plugin-react": "7.20.0",
     "eslint-plugin-react-hooks": "4.0.0",
-    "jest": "26.0.1",
+    "husky": "^4.2.5",
+    "jest": "26.1.0",
     "nodemon": "2.0.4",
     "prettier": "2.0.5"
   },
   "dependencies": {
     "@actions/core": "1.2.4",
     "pretty-npm-audit": "1.0.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run build"
+    }
   }
 }
