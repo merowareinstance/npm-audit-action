@@ -1,5 +1,3 @@
-const isUnitTest = false;
-
 const defaultConfig = {
   bail: true,
   testEnvironment: "node",
