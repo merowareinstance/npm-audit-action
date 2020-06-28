@@ -1,7 +1,12 @@
+const core = require("@actions/core");
 const prettyNpmAudit = require("pretty-npm-audit");
 const { actionsModule } = require("./modules");
 
-async function start({ dirPath, sort, debug }) {
+async function start() {
+  const dirPath = core.getInput("dirPath");
+  const sort = core.getInput("sort");
+  const debug = core.getInput("debug");
+
   prettyNpmAudit({
     dirPath,
     sort,
