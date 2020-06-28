@@ -1,6 +1,6 @@
 # npm-audit-action
 
-![Npm Audit Action CI](https://github.com/meroware/npm-audit-action/workflows/Npm%20Audit%20Action%20CI/badge.svg)
+![CI](https://github.com/meroware/npm-audit-action/workflows/CI/badge.svg)
 
 Automatically create npm audit result annotations when running in Github Actions
 
