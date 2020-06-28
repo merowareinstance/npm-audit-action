@@ -1,4 +1,4 @@
-name: Npm Audit Action CI
+name: CI
 on:
   push:
     branches-ignore:
