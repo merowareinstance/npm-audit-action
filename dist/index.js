@@ -594,6 +594,8 @@ module.exports = times;
 
 const fs = __webpack_require__(747);
 
+const auditLevels = ["low", "moderate", "high", "critical"];
+
 /**
  * Parses commands into supported ones and ignores the rest
  * @param {Object} commands
@@ -605,11 +607,15 @@ const fs = __webpack_require__(747);
  */
 function parseCommands(commands) {
   if (commands && typeof commands === "object") {
-    const { dirPath, sort, debug, json, jsonPretty } = commands;
+    const { dirPath, sort, debug, json, jsonPretty, auditLevel } = commands;
     // TODO: Go through and do param validation e.g make sure dirpath is an actual path
-  
+
     if (dirPath && !fs.existsSync(dirPath)) {
       throw new Error(`File path could not be found ${dirPath}`);
+    }
+
+    if (auditLevel && !auditLevels.includes(auditLevel)) {
+      throw new Error(`Audit Level needs to be one of ${auditLevels}`);
     }
 
     return {
@@ -618,6 +624,7 @@ function parseCommands(commands) {
       debug,
       json,
       jsonPretty,
+      auditLevel,
     };
   }
   return {};
@@ -7195,12 +7202,14 @@ const logger = __webpack_require__(677);
 const commandsModule = __webpack_require__(42);
 const parserModule = __webpack_require__(618);
 const arraysModule = __webpack_require__(632);
+const npmProcModule = __webpack_require__(574);
 
 module.exports = {
   logger,
   commandsModule,
   parserModule,
   arraysModule,
+  npmProcModule,
 };
 
 
@@ -11886,7 +11895,60 @@ module.exports = arrayLikeKeys;
 
 
 /***/ }),
-/* 574 */,
+/* 574 */
+/***/ (function(module, __unusedexports, __webpack_require__) {
+
+const parserModule = __webpack_require__(618);
+const logger = __webpack_require__(677);
+
+let payload = "";
+
+function resetPayload() {
+  payload = "";
+}
+
+function getPayload() {
+  return payload;
+}
+
+function onData(data) {
+  try {
+    payload += data.toString().trim();
+  } catch (e) {
+    throw new Error("Could not convert partial data to string");
+  }
+}
+
+function onError(data, dirPath) {
+  logger.info(`${data.toString().trim()} : Path provided ${dirPath}`);
+  throw new Error("Received error while parsing npm audit");
+}
+
+function onClose(useConfig) {
+  try {
+    const completePayload = JSON.parse(payload);
+    const data = parserModule.parse({
+      payload: completePayload,
+      sort: useConfig.sort,
+      json: useConfig.json,
+      jsonPretty: useConfig.jsonPretty,
+    });
+    return data;
+  } catch (e) {
+    throw new Error("Could not convert npm audit data");
+  }
+}
+
+module.exports = {
+  onData,
+  onError,
+  onClose,
+  resetPayload,
+  getPayload,
+};
+
+
+/***/ }),
 /* 575 */,
 /* 576 */,
 /* 577 */,
@@ -12746,11 +12808,12 @@ function parse({ payload, sort, json, jsonPretty }) {
 
     advisoryTablesJson[severity].push(cleanJson);
 
-    advisoryTablesJsonPretty[severity].push(buildTable(cleanJson));
+    advisoryTablesJsonPretty[severity].push(this.buildTable(cleanJson));
   });
 
   // Defaults to dsc - highest to lowest priority
-  let sortedTables = json === true ? advisoryTablesJson : advisoryTablesJsonPretty;
+  let sortedTables =
+    json === true ? advisoryTablesJson : advisoryTablesJsonPretty;
 
   if (sort && sort === "asc") {
     sortedTables = arraysModule.reverseObjectByKeys(sortedTables);
@@ -12766,6 +12829,7 @@ function parse({ payload, sort, json, jsonPretty }) {
 
 module.exports = {
   parse,
+  buildTable,
 };
 
 
@@ -13669,34 +13733,34 @@ class Logger {
     this.logger = pino(config);
   }
 
-  info() {
+  info(...args) {
     // eslint-disable-next-line prefer-rest-params
-    this.logger.info(arguments);
+    this.logger.info(args);
   }
 
-  warn() {
+  warn(...args) {
     // eslint-disable-next-line prefer-rest-params
-    this.logger.warn(arguments);
+    this.logger.warn(args);
   }
 
-  error() {
+  error(...args) {
     // eslint-disable-next-line prefer-rest-params
-    this.logger.error(arguments);
+    this.logger.error(args);
   }
 
-  debug() {
+  debug(...args) {
     // eslint-disable-next-line prefer-rest-params
-    this.logger.debug(arguments);
+    this.logger.debug(args);
   }
 
-  critical() {
+  critical(...args) {
     // eslint-disable-next-line prefer-rest-params
-    this.logger.critical(arguments);
+    this.logger.critical(args);
   }
 
-  fatal() {
+  fatal(...args) {
     // eslint-disable-next-line prefer-rest-params
-    this.logger.fatal(arguments);
+    this.logger.fatal(args);
   }
 }
 
@@ -17742,8 +17806,8 @@ module.exports = stringSize;
 /* 910 */
 /***/ (function(module, __unusedexports, __webpack_require__) {
 
-const { spawn } = __webpack_require__(129);
-const { parserModule, commandsModule, logger } = __webpack_require__(373);
+const childProcess = __webpack_require__(129);
+const { commandsModule, logger, npmProcModule } = __webpack_require__(373);
 
 const useConfig = {
   dirPath: "./",
@@ -17757,43 +17821,28 @@ function config() {
 }
 
 function audit() {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     let npmCommands = ["audit", "--json"];
+
+    if (useConfig.auditLevel) {
+      npmCommands = npmCommands.concat(["--audit-level", useConfig.auditLevel]);
+    }
 
     if (useConfig.dirPath) {
       npmCommands = npmCommands.concat(["--prefix", useConfig.dirPath]);
     }
 
-    let payload = "";
-    const proc = spawn("npm", npmCommands);
+    const proc = childProcess.spawn("npm", npmCommands);
 
-    proc.stdout.on("data", (data) => {
-      try {
-        const dataToParse = data.toString().trim();
-        payload += dataToParse;
-      } catch (e) {
-        reject(new Error("Could not convert partial data to string"));
-      }
-    });
+    npmProcModule.resetPayload();
+    proc.stdout.on("data", (data) => npmProcModule.onData(data));
 
-    proc.stderr.on("data", (data) => {
-      logger.info(`${data.toString().trim()} : Path provided ${useConfig.dirPath}`);
-      reject(new Error("Received error while parsing npm audit"));
-    });
+    proc.stderr.on("data", (data) =>
+      npmProcModule.onError(data, useConfig.dirPath)
+    );
 
     proc.on("close", async () => {
-      try {
-        const completePayload = JSON.parse(payload);
-        const data = parserModule.parse({
-          payload: completePayload,
-          sort: useConfig.sort,
-          json: useConfig.json,
-          jsonPretty: useConfig.jsonPretty,
-        });
-        resolve(data);
-      } catch (e) {
-        reject(new Error("Could not convert npm audit data"));
-      }
+      resolve(npmProcModule.onClose(useConfig));
     });
   });
 }
@@ -17803,7 +17852,7 @@ function audit() {
  * @param  {...any} args
  */
 function prettyAudit(...args) {
-  if (args.length) {
+  if (args && args.length) {
     const [commands] = args;
     if (commands) {
       const {
@@ -17812,17 +17861,23 @@ function prettyAudit(...args) {
         debug,
         json,
         jsonPretty,
+        auditLevel,
       } = commandsModule.parseCommands(commands);
 
-      if(json !== undefined && jsonPretty !== undefined) {
-        throw new Error('Please provide one option between json and jsonPretty');
+      if (json !== undefined && jsonPretty !== undefined) {
+        throw new Error(
+          "Please provide one option between json and jsonPretty"
+        );
       }
 
       useConfig.dirPath = dirPath === undefined ? useConfig.dirPath : dirPath;
       useConfig.sort = sort === undefined ? useConfig.sort : sort;
       useConfig.debug = debug === undefined ? useConfig.debug : debug;
       useConfig.json = json === undefined ? useConfig.json : json;
-      useConfig.jsonPretty = jsonPretty === undefined ? useConfig.jsonPretty : jsonPretty;
+      useConfig.jsonPretty =
+        jsonPretty === undefined ? useConfig.jsonPretty : jsonPretty;
+      useConfig.auditLevel =
+        auditLevel === undefined ? useConfig.auditLevel : auditLevel;
     }
   }
 

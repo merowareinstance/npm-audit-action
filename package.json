@@ -35,14 +35,14 @@
     "eslint-plugin-prettier": "3.1.4",
     "eslint-plugin-react": "7.20.0",
     "eslint-plugin-react-hooks": "4.0.0",
-    "husky": "^4.2.5",
+    "husky": "4.2.5",
     "jest": "26.1.0",
     "nodemon": "2.0.4",
     "prettier": "2.0.5"
   },
   "dependencies": {
     "@actions/core": "1.2.4",
-    "pretty-npm-audit": "1.0.1"
+    "pretty-npm-audit": "1.0.2"
   },
   "husky": {
     "hooks": {
