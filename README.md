@@ -37,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Use the action
-        uses: meroware/npm-audit-action@v1
+        uses: meroware/npm-audit-action@v1.0.2
         with:
            dirPath: vulnerable-project
 ```
