@@ -36,14 +36,8 @@ jobs:
     name: A job to test audit action 
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/checkout@v2
-        with:
-          repository: meroware/npm-audit-action
-          ref: v1
-          path: .github/actions/npm-audit-action
       - name: Use the action
-        id: npm-audit-action
-        uses: ./.github/actions/npm-audit-action
+        uses: meroware/npm-audit-action@v1
         with:
            dirPath: vulnerable-project
 ```
