@@ -41,7 +41,7 @@
     "prettier": "2.0.5"
   },
   "dependencies": {
-    "@actions/core": "1.2.4",
+    "@actions/core": "1.2.6",
     "pretty-npm-audit": "1.0.2"
   },
   "husky": {
